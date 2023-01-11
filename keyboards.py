@@ -65,14 +65,6 @@ kb_help_menu = InlineKeyboardMarkup(
                       InlineKeyboardButton(text='Скрыть', callback_data='hide')]])
 
 
-# kb_search_menu = InlineKeyboardMarkup(
-#     inline_keyboard=[[InlineKeyboardButton(text='🐱Котята', callback_data=f'search|{pet_type[0]}|0'),
-#                       InlineKeyboardButton(text='🐶Щенки', callback_data=f'search|{pet_type[1]}|0')],
-#                      [InlineKeyboardButton(text='🐈Кошки', callback_data=f'search|{pet_type[2]}|0'),
-#                       InlineKeyboardButton(text='🐕Собаки', callback_data=f'search|{pet_type[3]}|0')],
-#                      [InlineKeyboardButton(text='Скрыть', callback_data='hide')]])
-
-
 async def kb_search_menu() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for num, item in enumerate(['🐱Котята', '🐶Щенки', '🐈Кошки', '🐕Собаки']):
@@ -82,11 +74,47 @@ async def kb_search_menu() -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-async def scrolling_kb(row_id: int) -> InlineKeyboardMarkup:
+async def scrolling_kb(pet_type: int, page: int, pages: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
+    builder.button(text='Забрать питомца', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='sure'))
+    builder.button(text='Подробнее', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='post'))
+    builder.button(text='<-- Назад', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=(page - 1) % pages, action='scrolling'))
+    builder.button(text=f'{page + 1}/{pages}', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='pointer'))
+    builder.button(text='Вперед -->', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=(page + 1) % pages, action='scrolling'))
+    builder.button(text='Вернуться', callback_data='search')
+    builder.adjust(1, 1, 3, 1)
+    return builder.as_markup()
 
-    builder.button(text='Скрыть', callback_data='hide')
-    builder.adjust(3)
+
+async def pet_choosed_kb(pet_type: int, page: int, is_admin: bool) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    if is_admin:
+        builder.button(text='Редактировать описание', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit'))
+        builder.button(text='Удалить', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='delete_sure'))
+    else:
+        builder.button(text='Забрать питомца', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='sure'))
+    builder.button(text='Назад', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='scrolling'))
+    builder.adjust(2, 1) if is_admin else builder.adjust(1)
+    return builder.as_markup()
+
+
+
+async def pet_choosed_sure(pet_type: int, page: int) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text='Подтвердить', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='request'))
+    builder.button(text='Назад', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='scrolling'))
+    return builder.as_markup()
+
+async def pet_delete_sure(pet_type: int, page: int) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text='Удалить', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='delete'))
+    builder.button(text='Не удалять', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='post'))
+    return builder.as_markup()
+
+
+async def pet_was_deleted(pet_type: int, page: int) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text='К списку питомцев', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='scrolling'))
     return builder.as_markup()
 
 

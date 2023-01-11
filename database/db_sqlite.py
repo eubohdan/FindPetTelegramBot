@@ -1,8 +1,8 @@
 import sqlite3 as sq
-    #pet_type = {0:'Котёнок', 1:'Щенок', 2:'Кот', 3:'Собака'}
-    # pet_sex = {0: 'Неизвестно', 1: 'Джентльмен', 2: 'Дама'}
-    # sterilized = {0: 'Нет', 1: 'Да'}
-    # needs_temp_keeping = {0: 'Нет', 1: 'Да'}
+pet_type = {0:'Котёнок', 1:'Щенок', 2:'Кот', 3:'Собака'}
+pet_sex = {0: 'Неизвестно', 1: 'Джентльмен', 2: 'Дама'}
+sterilized = {0: 'Нет', 1: 'Да'}
+needs_temp_keeping = {0: 'Нет', 1: 'Да'}
 
 
 def start_db():
@@ -55,32 +55,35 @@ def set_org_info(data_type: str, row_id: str, value: str):
 async def pets_list(pet_type: int) -> list:
     with sq.connect('animals.db') as con:
         cur = con.cursor()
-        result = cur.execute(f"SELECT rowid from pets WHERE type = '{pet_type}'").fetchall()
+        result = [i[0] for i in cur.execute(f"SELECT rowid from pets WHERE type = '{pet_type}'").fetchall()]
     return result
 
 
 async def short_post(row_id:int) -> list:
     with sq.connect('animals.db') as con:
         cur = con.cursor()
-        result = cur.execute(f"SELECT img, name, sex, age from pets WHERE rowid = {row_id}")
+        result = cur.execute(f"SELECT img, name, sex, age from pets WHERE rowid = '{row_id}'").fetchone()
     return result
 
 
-async def delete_post(picture_link: str) -> None:
+async def long_post(row_id: int) -> dict:
     with sq.connect('animals.db') as con:
         cur = con.cursor()
-        cur.execute(f"DELETE FROM pets WHERE img = '{picture_link}'")
+        result = cur.execute(f"SELECT img, name, sex, age, sterilized, place, needs_temp_keeping, description, curator, published_by_id from pets WHERE rowid = '{row_id}'").fetchone()
+        result_dict = {'photo': result[0], 'name': result[1], 'sex': pet_sex[result[2]], 'age': result[3], 'sterilized': sterilized[result[4]], 'place': result[5], 'needs_temp_keeping': needs_temp_keeping[result[6]], 'description': result[7], 'curator': result[8], 'admin': result[9]}
+    return result_dict
 
 
-
-
-
-
-
-
-
-
-
+async def delete_post(picture_link: str) -> bool | None:
+    try:
+        print(picture_link)
+        with sq.connect('animals.db') as con:
+            cur = con.cursor()
+            cur.execute(f"DELETE FROM pets WHERE img = '{picture_link}'")
+            return True
+    except Exception as e:
+        print(e)
+        return False
 
 
 # def add_pet(state):
