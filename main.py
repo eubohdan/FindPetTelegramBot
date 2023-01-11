@@ -21,7 +21,7 @@ def main() -> None:
 
 commands.register_handlers(dp)
 other.register_handlers(dp)
-# search.register_handlers(dp)
+search.register_handlers(dp)
 orgs.register_handlers(dp) #важно чтобы info был после orgs
 info.register_handlers(dp)
 
