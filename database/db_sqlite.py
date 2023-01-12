@@ -76,7 +76,6 @@ async def long_post(row_id: int) -> dict:
 
 async def delete_post(picture_link: str) -> bool | None:
     try:
-        print(picture_link)
         with sq.connect('animals.db') as con:
             cur = con.cursor()
             cur.execute(f"DELETE FROM pets WHERE img = '{picture_link}'")

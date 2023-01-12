@@ -51,7 +51,7 @@ async def choice_pet(call: types.CallbackQuery, callback_data: cf.SearchCallback
                                                                             page=callback_data.page,
                                                                             is_admin=await other.is_admin_silent(userid=call.from_user.id)))
     elif callback_data.action == 'sure':
-        msg = '<b>Подтвердите заявку</b>\nПри подтверждении данные о Вашем профиле будут переданы куратору питомца.'
+        msg = '<b>Подтвердите заявку</b>\nПри подтверждении данные Вашего профиля будут переданы куратору питомца.'
         try:
             await bot.edit_message_caption(call.message.chat.id, call.message.message_id, caption=msg,
                                            reply_markup=await kb.pet_choosed_sure(pet_type=callback_data.pet_type,
@@ -94,8 +94,9 @@ async def choice_pet(call: types.CallbackQuery, callback_data: cf.SearchCallback
                                            caption=msg, reply_markup= await kb.pet_was_deleted(pet_type=callback_data.pet_type, page=callback_data.page))
     elif callback_data.action == 'edit':
         if await other.is_admin(call):
+            msg = call.message.caption
             await bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                           caption=f"<b>Что необходимо изменить?.</b>\n<i>Для копирования текста нажмите на него</i>", reply_markup= await kb.what_to_edit(pet_type=callback_data.pet_type, page=callback_data.page))
+                                           caption=f"<b>Что необходимо изменить?.</b>\n<i>Для копирования текста нажмите на него</i>\n\n{msg}", reply_markup= await kb.what_to_edit(pet_type=callback_data.pet_type, page=callback_data.page))
 
 
 def register_handlers(dp: Dispatcher):

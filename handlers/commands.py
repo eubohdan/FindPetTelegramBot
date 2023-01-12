@@ -1,14 +1,14 @@
 from aiogram import Dispatcher, types
 from aiogram.filters import Command
 
-from other import is_admin
+from other import is_admin, is_admin_silent
 from create_bot import bot
 import keyboards as kb
 
 
 async def command_start_handler(message: types.Message):
     await message.delete()
-    await bot.send_message(message.from_user.id, f"{['Доброй ночи', 'Доброе утро', 'Добрый день', 'Добрый вечер'][(message.date.hour + 3) % 24 // 6]}, <b>{message.from_user.first_name}!</b>\nВоспользуйтесь кнопками ниже.", reply_markup=kb.main_buttons_kb)
+    await bot.send_message(message.from_user.id, f"{['Доброй ночи', 'Доброе утро', 'Добрый день', 'Добрый вечер'][(message.date.hour + 3) % 24 // 6]}, <b>{message.from_user.first_name}!</b>\nВоспользуйтесь кнопками ниже.", reply_markup=await kb.main_buttons(is_admin=await is_admin_silent(userid=message.from_user.id)))
 
 
 async def command_help_handler(message: types.Message):

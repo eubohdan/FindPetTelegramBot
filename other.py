@@ -11,7 +11,7 @@ async def is_admin(update: types.Update | types.Message | types.CallbackQuery) -
     if update.from_user.id in admins:
         return True
     await bot.send_message(update.from_user.id, '<b>🚫 У вас нет доступа.</b>\nОбратитесь к администратору.',
-                           reply_markup=kb.main_buttons_kb)
+                           reply_markup=await kb.main_buttons(is_admin=await is_admin_silent(userid=update.from_user.id)))
 
 
 async def is_admin_silent(userid: int) -> bool:
@@ -27,7 +27,7 @@ async def hide_message(update: types.Update) -> None:
     except Exception as e:
         print(e) # !!!
         await update.answer('Бот не может скрыть сообщение, так как ему более 48 часов, но вы можете удалить его самостоятельно.',
-                            reply_markup=kb.main_buttons_kb)
+                            reply_markup=await kb.main_buttons(is_admin=await is_admin_silent(userid=update.from_user.id)))
 
 
 async def cancel_edit(call: types.CallbackQuery, state: FSMContext):
@@ -36,7 +36,7 @@ async def cancel_edit(call: types.CallbackQuery, state: FSMContext):
         await call.message.delete()
     finally:
         await state.clear()
-        await call.message.answer('<b>Редактирование отменено.</b>\nИзменения не сохранены.', reply_markup=kb.main_buttons_kb)
+        await call.message.answer('<b>Редактирование отменено.</b>\nИзменения не сохранены.', reply_markup=await kb.main_buttons(is_admin=await is_admin_silent(userid=call.from_user.id)))
         await call.answer()
 
 
@@ -45,9 +45,14 @@ async def in_dev(call: types.CallbackQuery):
     await call.answer(text='Раздел временно недоступен', show_alert=True)
 
 
+async def other_text(message: types.Message):  # Удаляет всё что поступает со ввода и не соответствует тексту меню
+    await message.delete()
+    await bot.send_message(message.from_user.id, 'Для работы с ботом воспользуйтесь кнопками.', reply_markup=[kb.keyboard_main, kb.keyboard_main_admin][message.from_user.id in config.admins])
+
+
 def register_handlers(dp: Dispatcher):
     dp.callback_query.register(hide_message, lambda call: call.data == 'hide')
     dp.callback_query.register(in_dev, lambda call: call.data == 'in_dev')
     dp.callback_query.register(cancel_edit, lambda call: call.data == 'cancelFSM')
-
+    dp.message.register(other_text)
 

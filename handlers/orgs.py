@@ -6,7 +6,7 @@ import keyboards as kb
 from database import db_sqlite as db
 from create_bot import bot
 import callback_factories as cf
-
+from other import is_admin_silent
 
 async def orgs_menu(update: types.Update) -> None:
     try:
@@ -74,7 +74,7 @@ async def org_info_edit_photo(message: types.Message, state: FSMContext):
         photo_id = message.photo[0].file_id
         row_id = await state.storage.get_data(bot, key=state.key)
         db.set_org_info(data_type='logo', row_id=row_id['row_id'], value=photo_id)
-        await message.answer('<b>Фотография успешно загружена.</b>', reply_markup=kb.main_buttons_kb)
+        await message.answer('<b>Фотография успешно загружена.</b>', reply_markup=await kb.main_buttons(is_admin=await is_admin_silent(userid=message.from_user.id)))
         await state.clear()
     except(IndexError, TypeError):
         await message.answer('<b>Вы отправили не фотографию.</b>\n<i>Попробуйте снова.</i>',
@@ -88,7 +88,7 @@ async def org_info_edit_description(message: types.Message, state: FSMContext):
             max_len = 900 if data['data_type'] == 'description' else 4000
             if len(message.html_text) <= max_len:
                 db.set_org_info(data_type=data['data_type'], row_id=data['row_id'], value=message.html_text)
-                await message.answer('<b>Описание изменено.</b>', reply_markup=kb.main_buttons_kb)
+                await message.answer('<b>Описание изменено.</b>', reply_markup=await kb.main_buttons(is_admin=await is_admin_silent(userid=message.from_user.id)))
                 await state.clear()
             else:
                 await message.answer(

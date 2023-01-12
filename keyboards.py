@@ -3,11 +3,19 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 from database import db_sqlite as db
 import callback_factories as cf
 
-
 main_buttons_text = ['🐾Выбрать питомца', '🫶Хочу помочь', '🏡Организации']
-main_buttons_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=item) for item in main_buttons_text]],
-                                      resize_keyboard=True,
-                                      input_field_placeholder='Для выбора пункта меню нажмите на кнопку')
+admin_button_text = 'Добавить питомца'
+
+
+async def main_buttons(is_admin: bool) -> ReplyKeyboardMarkup:
+    builder = ReplyKeyboardBuilder()
+    for item in main_buttons_text:
+        builder.button(text=item)
+    if is_admin:
+        builder.button(text=admin_button_text)
+    builder.adjust(3)
+    return builder.as_markup(resize_keyboard=True,
+                             input_field_placeholder='Для выбора пункта меню нажмите на кнопку')
 
 
 kb_about_me = InlineKeyboardMarkup(
@@ -45,8 +53,8 @@ async def kb_org_socials(row_id: str, user_id: int) -> InlineKeyboardMarkup:
 
 async def kb_edit_org(row_id: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text='Фото', callback_data=f'orgedit|{row_id}|photo') #!!
-    builder.button(text='Описание', callback_data=f'orgedit|{row_id}|description') #!!
+    builder.button(text='Фото', callback_data=f'orgedit|{row_id}|photo')  # !!
+    builder.button(text='Описание', callback_data=f'orgedit|{row_id}|description')  # !!
     builder.button(text='Отмена', callback_data=cf.InfoCallbackFactory(action='description', value=row_id))
     builder.adjust(2)
     return builder.as_markup()
@@ -54,6 +62,10 @@ async def kb_edit_org(row_id: str) -> InlineKeyboardMarkup:
 
 kb_cancel_edit = InlineKeyboardMarkup(
     inline_keyboard=[[InlineKeyboardButton(text='Отменить и выйти', callback_data='cancelFSM')]])
+
+
+kb_cancel_edit2 = InlineKeyboardMarkup(
+    inline_keyboard=[[InlineKeyboardButton(text='К предыдущему пункту', callback_data='prevFSM')], [InlineKeyboardButton(text='Отменить и выйти', callback_data='cancelFSM')]])
 
 
 kb_help_menu = InlineKeyboardMarkup(
@@ -76,11 +88,16 @@ async def kb_search_menu() -> InlineKeyboardMarkup:
 
 async def scrolling_kb(pet_type: int, page: int, pages: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text='Забрать питомца', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='sure'))
-    builder.button(text='Подробнее', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='post'))
-    builder.button(text='<-- Назад', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=(page - 1) % pages, action='scrolling'))
-    builder.button(text=f'{page + 1}/{pages}', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='pointer'))
-    builder.button(text='Вперед -->', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=(page + 1) % pages, action='scrolling'))
+    builder.button(text='Забрать питомца',
+                   callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='sure'))
+    builder.button(text='Подробнее',
+                   callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='post'))
+    builder.button(text='<-- Назад', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=(page - 1) % pages,
+                                                                            action='scrolling'))
+    builder.button(text=f'{page + 1}/{pages}',
+                   callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='pointer'))
+    builder.button(text='Вперед -->', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=(page + 1) % pages,
+                                                                             action='scrolling'))
     builder.button(text='Вернуться', callback_data='search')
     builder.adjust(1, 1, 3, 1)
     return builder.as_markup()
@@ -89,32 +106,53 @@ async def scrolling_kb(pet_type: int, page: int, pages: int) -> InlineKeyboardMa
 async def pet_choosed_kb(pet_type: int, page: int, is_admin: bool) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     if is_admin:
-        builder.button(text='Редактировать описание', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit'))
-        builder.button(text='Удалить', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='delete_sure'))
+        builder.button(text='Редактировать описание',
+                       callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit'))
+        builder.button(text='Удалить',
+                       callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='delete_sure'))
     else:
-        builder.button(text='Забрать питомца', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='sure'))
-    builder.button(text='Назад', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='scrolling'))
+        builder.button(text='Забрать питомца',
+                       callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='sure'))
+    builder.button(text='Назад',
+                   callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='scrolling'))
     builder.adjust(2, 1) if is_admin else builder.adjust(1)
     return builder.as_markup()
 
 
-
 async def pet_choosed_sure(pet_type: int, page: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text='Подтвердить', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='request'))
-    builder.button(text='Назад', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='scrolling'))
+    builder.button(text='Подтвердить',
+                   callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='request'))
+    builder.button(text='Назад',
+                   callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='scrolling'))
     return builder.as_markup()
+
 
 async def pet_delete_sure(pet_type: int, page: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text='Удалить', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='delete'))
-    builder.button(text='Не удалять', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='post'))
+    builder.button(text='Удалить',
+                   callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='delete'))
+    builder.button(text='Не удалять',
+                   callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='post'))
     return builder.as_markup()
 
 
 async def pet_was_deleted(pet_type: int, page: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text='К списку питомцев', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='scrolling'))
+    builder.button(text='К списку питомцев',
+                   callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='scrolling'))
+    return builder.as_markup()
+
+
+async def what_to_edit(pet_type: int, page: int) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text='Описание', callback_data='')
+    builder.button(text='Возраст', callback_data='')
+    builder.button(text='Стерилизация', callback_data='')
+    builder.button(text='Место', callback_data='')
+    builder.button(text='Куратор', callback_data='')
+    builder.button(text='Назад', callback_data='')
+    builder.adjust(1, 2, 2, 1)
     return builder.as_markup()
 
 
@@ -124,14 +162,16 @@ async def kb_help_org(action: str, row_id: str, user_id: int) -> InlineKeyboardM
     if str(user_id) == admin:
         builder.add(InlineKeyboardButton(text='Редактировать', callback_data=f'orgedit|{row_id}|{action}'))
     else:
-        builder.row(InlineKeyboardButton(text='Предложить помощь', url=f"tg://user?id={admin}")) #!!! будет ошибка если у админа настроена приватность
+        builder.row(InlineKeyboardButton(text='Предложить помощь',
+                                         url=f"tg://user?id={admin}"))  # !!! будет ошибка если у админа настроена приватность
     builder.row(InlineKeyboardButton(text='Назад', callback_data=f'help|{action}'))
     return builder.as_markup()
 
 
-kb_temp_keeping = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='🐾Взять на передержку', callback_data='in_dev')],
-                                        [InlineKeyboardButton(text='Назад', callback_data='help')]])
+kb_temp_keeping = InlineKeyboardMarkup(
+    inline_keyboard=[[InlineKeyboardButton(text='🐾Взять на передержку', callback_data='search')],
+                     [InlineKeyboardButton(text='Назад', callback_data='help')]])
 
-
-kb_auto_help = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='Оставить заявку', callback_data='in_dev')],
-                                     [InlineKeyboardButton(text='Назад', callback_data='help')]])
+kb_auto_help = InlineKeyboardMarkup(
+    inline_keyboard=[[InlineKeyboardButton(text='Оставить заявку', callback_data='in_dev')],
+                     [InlineKeyboardButton(text='Назад', callback_data='help')]])
