@@ -146,12 +146,12 @@ async def pet_was_deleted(pet_type: int, page: int) -> InlineKeyboardMarkup:
 
 async def what_to_edit(pet_type: int, page: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text='Описание', callback_data='')
-    builder.button(text='Возраст', callback_data='')
-    builder.button(text='Стерилизация', callback_data='')
-    builder.button(text='Место', callback_data='')
-    builder.button(text='Куратор', callback_data='')
-    builder.button(text='Назад', callback_data='')
+    builder.button(text='Описание', callback_data='in_dev')
+    builder.button(text='Возраст', callback_data='in_dev')
+    builder.button(text='Стерилизация', callback_data='in_dev')
+    builder.button(text='Место', callback_data='in_dev')
+    builder.button(text='Куратор', callback_data='in_dev')
+    builder.button(text='Назад', callback_data='in_dev')
     builder.adjust(1, 2, 2, 1)
     return builder.as_markup()
 
@@ -175,3 +175,23 @@ kb_temp_keeping = InlineKeyboardMarkup(
 kb_auto_help = InlineKeyboardMarkup(
     inline_keyboard=[[InlineKeyboardButton(text='Оставить заявку', callback_data='in_dev')],
                      [InlineKeyboardButton(text='Назад', callback_data='help')]])
+
+
+pet_type_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=i) for i in db.pet_type]],
+                resize_keyboard=True, one_time_keyboard=True, input_field_placeholder='Выберите вариант из предложенных')
+
+pet_sex_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=i) for i in db.pet_sex]],
+                resize_keyboard=True, one_time_keyboard=True, input_field_placeholder='Выберите вариант из предложенных')
+
+pet_bool_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=i) for i in db.bool_answer]],
+                resize_keyboard=True, one_time_keyboard=True, input_field_placeholder='Выберите вариант из предложенных')
+
+
+async def pet_place_kb() -> ReplyKeyboardMarkup:
+    builder = ReplyKeyboardBuilder()
+    for name in [i[1] for i in db.get_org_names()]:
+        builder.button(text=name)
+    builder.button(text='Гурского, 42')
+    builder.button(text='Передержка')
+    builder.adjust(2)
+    return builder.as_markup()

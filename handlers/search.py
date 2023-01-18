@@ -25,11 +25,11 @@ async def choice_pet(call: types.CallbackQuery, callback_data: cf.SearchCallback
         pets_list = await db.pets_list(pet_type=callback_data.pet_type)
         if pets_list:
             pet = await db.short_post(pets_list[callback_data.page % len(pets_list)])
-            msg = f'''<b>{pet[1]}</b>\nПол: <b>{db.pet_sex[pet[2]]}</b>\nВозраст: <b>{pet[3]}</b>'''
+            msg = f'''<b>{pet['name']}</b>\nПол: <b>{pet['sex']}</b>\nВозраст: <b>{pet['age']}</b>'''
             try:
                 await call.message.delete()
             finally:
-                await bot.send_photo(chat_id=call.from_user.id, photo=pet[0], caption=msg,
+                await bot.send_photo(chat_id=call.from_user.id, photo=pet['photo'], caption=msg,
                                      reply_markup=await kb.scrolling_kb(page=callback_data.page % len(pets_list),
                                                                         pages=len(pets_list),
                                                                         pet_type=callback_data.pet_type))
@@ -88,7 +88,7 @@ async def choice_pet(call: types.CallbackQuery, callback_data: cf.SearchCallback
         if await other.is_admin(call):
             pets_list = await db.pets_list(pet_type=callback_data.pet_type)
             pet = await db.short_post(row_id=pets_list[callback_data.page])
-            image_link = pet[0]
+            image_link = pet['photo']
             msg = '<b>Запись удалена.</b>' if await db.delete_post(image_link) else '<b>Произошла ошибка.</b>\n<i>Попробуйте позже либо сообщите администратору.</i>'
             await bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
                                            caption=msg, reply_markup= await kb.pet_was_deleted(pet_type=callback_data.pet_type, page=callback_data.page))
@@ -96,7 +96,7 @@ async def choice_pet(call: types.CallbackQuery, callback_data: cf.SearchCallback
         if await other.is_admin(call):
             msg = call.message.caption
             await bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                           caption=f"<b>Что необходимо изменить?.</b>\n<i>Для копирования текста нажмите на него</i>\n\n{msg}", reply_markup= await kb.what_to_edit(pet_type=callback_data.pet_type, page=callback_data.page))
+                                           caption=f"<b>Что необходимо изменить?.</b>\n<i>Для копирования текста нажмите на него</i>\n\n<code>{msg}</code>", reply_markup=await kb.what_to_edit(pet_type=callback_data.pet_type, page=callback_data.page))
 
 
 def register_handlers(dp: Dispatcher):
