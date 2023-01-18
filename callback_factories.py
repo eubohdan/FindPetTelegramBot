@@ -12,3 +12,4 @@ class SearchCallbackFactory(CallbackData, prefix='search'):
     pet_type: int
     page: int
     action: str
+    additional: Optional[int | str]

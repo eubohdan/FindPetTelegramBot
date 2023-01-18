@@ -1,11 +1,13 @@
 from aiogram import types, Dispatcher
 from aiogram.filters import Text
+from aiogram.fsm.context import FSMContext
 
 import other
 from create_bot import bot
 from database import db_sqlite as db
 import callback_factories as cf
 import keyboards as kb
+from handlers.admin import FSMAddPet
 
 
 async def search_menu(update: types.Update) -> None:
@@ -19,7 +21,7 @@ async def search_menu(update: types.Update) -> None:
                                reply_markup=await kb.kb_search_menu())
 
 
-async def choice_pet(call: types.CallbackQuery, callback_data: cf.SearchCallbackFactory) -> None:
+async def choice_pet(call: types.CallbackQuery, callback_data: cf.SearchCallbackFactory, state: FSMContext) -> None:
     '''Пагинация животных'''
     if callback_data.action == 'scrolling':
         pets_list = await db.pets_list(pet_type=callback_data.pet_type)
@@ -49,7 +51,8 @@ async def choice_pet(call: types.CallbackQuery, callback_data: cf.SearchCallback
         await bot.edit_message_caption(call.message.chat.id, call.message.message_id, caption=msg,
                                        reply_markup=await kb.pet_choosed_kb(pet_type=callback_data.pet_type,
                                                                             page=callback_data.page,
-                                                                            is_admin=await other.is_admin_silent(userid=call.from_user.id)))
+                                                                            is_admin=await other.is_admin_silent(
+                                                                                userid=call.from_user.id)))
     elif callback_data.action == 'sure':
         msg = '<b>Подтвердите заявку</b>\nПри подтверждении данные Вашего профиля будут переданы куратору питомца.'
         try:
@@ -83,20 +86,46 @@ async def choice_pet(call: types.CallbackQuery, callback_data: cf.SearchCallback
     elif callback_data.action == 'delete_sure':
         if await other.is_admin(call):
             await bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                           caption=f"<b>Вы уверены?</b>\nУдаление отменить нельзя.", reply_markup= await kb.pet_delete_sure(pet_type=callback_data.pet_type, page=callback_data.page))
+                                           caption=f"<b>Вы уверены?</b>\nУдаление отменить нельзя.",
+                                           reply_markup=await kb.pet_delete_sure(pet_type=callback_data.pet_type,
+                                                                                 page=callback_data.page))
     elif callback_data.action == 'delete':
         if await other.is_admin(call):
             pets_list = await db.pets_list(pet_type=callback_data.pet_type)
             pet = await db.short_post(row_id=pets_list[callback_data.page])
             image_link = pet['photo']
-            msg = '<b>Запись удалена.</b>' if await db.delete_post(image_link) else '<b>Произошла ошибка.</b>\n<i>Попробуйте позже либо сообщите администратору.</i>'
+            msg = '<b>Запись удалена.</b>' if await db.delete_post(
+                image_link) else '<b>Произошла ошибка.</b>\n<i>Попробуйте позже либо сообщите администратору.</i>'
             await bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                           caption=msg, reply_markup= await kb.pet_was_deleted(pet_type=callback_data.pet_type, page=callback_data.page))
+                                           caption=msg,
+                                           reply_markup=await kb.pet_was_deleted(pet_type=callback_data.pet_type,
+                                                                                 page=callback_data.page))
     elif callback_data.action == 'edit':
         if await other.is_admin(call):
-            msg = call.message.caption
-            await bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                           caption=f"<b>Что необходимо изменить?.</b>\n<i>Для копирования текста нажмите на него</i>\n\n<code>{msg}</code>", reply_markup=await kb.what_to_edit(pet_type=callback_data.pet_type, page=callback_data.page))
+            if not callback_data.additional:
+                split_msg = call.message.html_text.split('\n\n')
+                await bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                               caption=f"<b>Что необходимо изменить?</b>\n\n{split_msg[0]}\n\n<code>{split_msg[1]}</code>",
+                                               reply_markup=await kb.what_to_edit(pet_type=callback_data.pet_type,
+                                                                                  page=callback_data.page))
+            else:
+                pets_list = await db.pets_list(pet_type=callback_data.pet_type)
+                pet = await db.short_post(row_id=pets_list[callback_data.page])
+                image_link = pet['photo']
+                await state.set_state(FSMAddPet.edit)
+                await call.message.delete()
+                first_msg = await call.message.answer('<b>Чтобы отменить редактирование, нажмите кнопку ниже</b>',
+                                                      reply_markup=kb.kb_cancel_edit)
+                texts_and_replies = {'img': ['Загрузите новую фотографию.', types.ReplyKeyboardRemove()],
+                                     'description': ['Введите новое описание.', types.ReplyKeyboardRemove()],
+                                     'age': ['Введите новый возраст.', types.ReplyKeyboardRemove()],
+                                     'sterilized': ['Укажите, стерилизовано ли животное.', kb.pet_bool_kb],
+                                     'place': ['Укажите новое место.', await kb.pet_place_kb()],
+                                     'curator': ['Укажите новые данные куратора.', types.ReplyKeyboardRemove()],
+                                     'needs_temp_keeping': ['Укажите, нужна ли животному передержка.', kb.pet_bool_kb]}
+                msg = await call.message.answer_photo(photo=call.message.photo[0].file_id, caption=texts_and_replies[callback_data.additional][0],
+                                                      reply_markup=texts_and_replies[callback_data.additional][1])
+                await state.update_data(first_msg=first_msg.message_id, msg=msg.message_id, content_type=callback_data.additional, image_link=image_link)
 
 
 def register_handlers(dp: Dispatcher):

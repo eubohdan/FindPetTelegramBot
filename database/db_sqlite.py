@@ -75,7 +75,7 @@ async def short_post(row_id: int) -> dict:
     return result_dict
 
 
-async def long_post(row_id: int) -> dict:  # !!!!!!!!!!!!!!!!
+async def long_post(row_id: int) -> dict:
     with sq.connect('animals.db') as con:
         cur = con.cursor()
         result = cur.execute(
@@ -105,3 +105,12 @@ def add_pet(data: dict):
                     tuple([data['photo'], data['name'], data['type'], data['sex'], data['age'],
                            data['sterilized'], data['place'], data['needs_temp_keeping'], data['description'],
                            data['curator'], data['published_by_id']]))
+
+
+def edit_pet(content_type: str, data: str, image_link: str) -> bool | None:
+    if content_type in ('sterilized', 'needs_temp_keeping'):
+        data = bool_answer[data]
+    with sq.connect('animals.db') as con:
+        cur = con.cursor()
+        cur.execute(f'''UPDATE pets SET {content_type} = ? WHERE img = '{image_link}' ''', [data])
+    return True

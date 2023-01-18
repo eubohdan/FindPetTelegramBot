@@ -47,7 +47,10 @@ async def in_dev(call: types.CallbackQuery):
 
 async def other_text(message: types.Message):  # Удаляет всё что поступает со ввода и не соответствует тексту меню
     await message.delete()
-    await bot.send_message(message.from_user.id, 'Для работы с ботом воспользуйтесь кнопками.', reply_markup=[kb.keyboard_main, kb.keyboard_main_admin][message.from_user.id in config.admins])
+    if is_admin_silent(userid=message.from_user.id):
+        pass# тут - функция для поиска по именам
+    else:
+        await bot.send_message(message.from_user.id, 'Для работы с ботом воспользуйтесь кнопками.', reply_markup=await kb.main_buttons(is_admin=False))
 
 
 def register_handlers(dp: Dispatcher):

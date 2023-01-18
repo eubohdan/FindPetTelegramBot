@@ -146,13 +146,15 @@ async def pet_was_deleted(pet_type: int, page: int) -> InlineKeyboardMarkup:
 
 async def what_to_edit(pet_type: int, page: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text='Описание', callback_data='in_dev')
-    builder.button(text='Возраст', callback_data='in_dev')
-    builder.button(text='Стерилизация', callback_data='in_dev')
-    builder.button(text='Место', callback_data='in_dev')
-    builder.button(text='Куратор', callback_data='in_dev')
-    builder.button(text='Назад', callback_data='in_dev')
-    builder.adjust(1, 2, 2, 1)
+    builder.button(text='Фото', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='img'))
+    builder.button(text='Описание', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='description'))
+    builder.button(text='Возраст', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='age'))
+    builder.button(text='Стерилизация', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='sterilized'))
+    builder.button(text='Место', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='place'))
+    builder.button(text='Куратор', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='curator'))
+    builder.button(text='Нужна ли передержка', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='needs_temp_keeping'))
+    builder.button(text='Назад', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='post'))
+    builder.adjust(2, 2, 2, 1, 1)
     return builder.as_markup()
 
 
@@ -195,3 +197,4 @@ async def pet_place_kb() -> ReplyKeyboardMarkup:
     builder.button(text='Передержка')
     builder.adjust(2)
     return builder.as_markup()
+
