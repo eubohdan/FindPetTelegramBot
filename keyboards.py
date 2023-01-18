@@ -79,7 +79,7 @@ kb_help_menu = InlineKeyboardMarkup(
 
 async def kb_search_menu() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    for num, item in enumerate(['🐱Котята', '🐶Щенки', '🐈Кошки', '🐕Собаки']):
+    for num, item in enumerate(['🐱Котята', '🐶Щенки', '🐈Коты', '🐕Собаки']):
         builder.button(text=item, callback_data=cf.SearchCallbackFactory(pet_type=num, page=0, action='scrolling'))
     builder.button(text='Скрыть', callback_data='hide')
     builder.adjust(2)
@@ -155,6 +155,34 @@ async def what_to_edit(pet_type: int, page: int) -> InlineKeyboardMarkup:
     builder.button(text='Нужна ли передержка', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='needs_temp_keeping'))
     builder.button(text='Назад', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='post'))
     builder.adjust(2, 2, 2, 1, 1)
+    return builder.as_markup()
+
+
+async def edit_ended(pet_type: int, page: int) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text='Продолжить', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='post'))
+    return builder.as_markup()
+
+
+async def name_search_results(result_list: list) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for item in result_list:
+        pets_list = await db.pets_list(pet_type=item[3])
+        page = pets_list.index(item[1])
+        builder.button(text=item[0].capitalize(), callback_data=cf.SearchCallbackFactory(pet_type=item[3], page=page, action='scrolling'))
+    builder.adjust(2)
+    builder.button(text='Скрыть', callback_data='hide')
+    return builder.as_markup()
+
+
+async def name_search_one_result(result_list: list) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    item = result_list[0]
+    pets_list = await db.pets_list(pet_type=item[3])
+    page = pets_list.index(item[1])
+    builder.button(text='Перейти', callback_data=cf.SearchCallbackFactory(pet_type=item[3], page=page, action='scrolling'))
+    builder.button(text='Скрыть', callback_data='hide')
+    builder.adjust(2)
     return builder.as_markup()
 
 

@@ -67,6 +67,13 @@ async def pets_list(pet_type: int) -> list:
     return result
 
 
+async def pets_names_list() -> list:
+    with sq.connect('animals.db') as con:
+        cur = con.cursor()
+        result = [(i[0].lower(), i[1], i[2], i[3]) for i in cur.execute(f"SELECT name, rowid, img, type from pets").fetchall()]
+    return result
+
+
 async def short_post(row_id: int) -> dict:
     with sq.connect('animals.db') as con:
         cur = con.cursor()
@@ -107,10 +114,10 @@ def add_pet(data: dict):
                            data['curator'], data['published_by_id']]))
 
 
-def edit_pet(content_type: str, data: str, image_link: str) -> bool | None:
+def edit_pet(content_type: str, data: str, row_id: int) -> bool | None:
     if content_type in ('sterilized', 'needs_temp_keeping'):
         data = bool_answer[data]
     with sq.connect('animals.db') as con:
         cur = con.cursor()
-        cur.execute(f'''UPDATE pets SET {content_type} = ? WHERE img = '{image_link}' ''', [data])
+        cur.execute(f'''UPDATE pets SET {content_type} = ? WHERE rowid = '{row_id}' ''', [data])
     return True

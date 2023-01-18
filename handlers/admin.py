@@ -1,6 +1,6 @@
 from aiogram.filters import Text
 from aiogram import types, Dispatcher
-
+from asyncio import sleep
 from create_bot import bot
 import keyboards as kb
 from other import is_admin
@@ -35,16 +35,17 @@ async def admin_edit_pet(message: types.Message = None, state: FSMContext = FSMA
                          'place': [message.text, 'Вы не ввели текст. Попробуйте снова'],
                          'curator': [message.text, 'Вы не ввели текст. Попробуйте снова'],
                          'needs_temp_keeping': [message.text and message.text in db.bool_answer, '<b>Неверный ответ.</b>\n<i>Чтобы указать, нужна ли животному передержка, воспользуйтесь кнопками ниже.</i>']}
+        await bot.delete_message(chat_id=message.from_user.id, message_id=data['msg'])
         if circumstances[data['content_type']][0]:
-            if db.edit_pet(image_link=data['image_link'], content_type=data['content_type'], data=message.text if data['content_type'] != 'img' else message.photo[0].file_id):
-                await message.answer('<b>Данные успешно изменены.</b>', reply_markup=await kb.main_buttons(is_admin=True))
+            if db.edit_pet(row_id=data['row_id'], content_type=data['content_type'], data=message.text if data['content_type'] != 'img' else message.photo[0].file_id):
+                await message.answer_photo(photo=data['photo'], caption='<b>Данные успешно изменены.</b>', reply_markup=await kb.edit_ended(pet_type=data['pet_type'], page=data['page']))
             else:
                 await message.answer('<b>Что-то пошло не так. Пожалуйста, свяжитесь с администратором.</b>', reply_markup=kb.kb_about_me)
             await bot.delete_message(chat_id=message.from_user.id, message_id=data['first_msg'])
-            await bot.delete_message(chat_id=message.from_user.id, message_id=data['msg'])
             await state.clear()
         else:
-            await message.answer(text=circumstances[data['content_type']][1], reply_markup=message.reply_markup)
+            msg = await message.answer(text=circumstances[data['content_type']][1], reply_markup=message.reply_markup)
+            await state.update_data(msg=msg.message_id)
 
 
 async def admin_add_pets_start(message: types.Message, state: FSMContext):
@@ -215,6 +216,7 @@ async def admin_add_pets_curator(message: types.Message, state: FSMContext):
                 await message.answer('Все этапы пройдены ✅\n<b>Питомец добавлен в базу данных.</b>', reply_markup= await kb.main_buttons(is_admin=True))
             else:
                 await message.answer('<b>Сведения о кураторе - не более 50 символов.</b>\n<i>Повторите ввод.</i>')
+
 
 def register_handlers_admin(dp: Dispatcher):
     dp.message.register(admin_add_pets_start, Text(text=kb.admin_button_text))

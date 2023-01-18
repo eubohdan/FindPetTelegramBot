@@ -110,8 +110,7 @@ async def choice_pet(call: types.CallbackQuery, callback_data: cf.SearchCallback
                                                                                   page=callback_data.page))
             else:
                 pets_list = await db.pets_list(pet_type=callback_data.pet_type)
-                pet = await db.short_post(row_id=pets_list[callback_data.page])
-                image_link = pet['photo']
+                row_id = pets_list[callback_data.page]
                 await state.set_state(FSMAddPet.edit)
                 await call.message.delete()
                 first_msg = await call.message.answer('<b>Чтобы отменить редактирование, нажмите кнопку ниже</b>',
@@ -125,7 +124,7 @@ async def choice_pet(call: types.CallbackQuery, callback_data: cf.SearchCallback
                                      'needs_temp_keeping': ['Укажите, нужна ли животному передержка.', kb.pet_bool_kb]}
                 msg = await call.message.answer_photo(photo=call.message.photo[0].file_id, caption=texts_and_replies[callback_data.additional][0],
                                                       reply_markup=texts_and_replies[callback_data.additional][1])
-                await state.update_data(first_msg=first_msg.message_id, msg=msg.message_id, content_type=callback_data.additional, image_link=image_link)
+                await state.update_data(first_msg=first_msg.message_id, msg=msg.message_id, content_type=callback_data.additional, row_id=row_id, pet_type=callback_data.pet_type, page=callback_data.page, photo=call.message.photo[0].file_id)
 
 
 def register_handlers(dp: Dispatcher):
