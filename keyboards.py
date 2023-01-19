@@ -4,7 +4,7 @@ from database import db_sqlite as db
 import callback_factories as cf
 
 main_buttons_text = ['🐾Выбрать питомца', '🫶Хочу помочь', '🏡Организации']
-admin_button_text = 'Добавить питомца'
+admin_buttons_text = ['Добавить питомца', 'Нужна автопомощь']
 
 
 async def main_buttons(is_admin: bool) -> ReplyKeyboardMarkup:
@@ -12,7 +12,8 @@ async def main_buttons(is_admin: bool) -> ReplyKeyboardMarkup:
     for item in main_buttons_text:
         builder.button(text=item)
     if is_admin:
-        builder.button(text=admin_button_text)
+        for item in admin_buttons_text:
+            builder.button(text=item)
     builder.adjust(3)
     return builder.as_markup(resize_keyboard=True,
                              input_field_placeholder='Для выбора пункта меню нажмите на кнопку')
@@ -62,11 +63,6 @@ async def kb_edit_org(row_id: str) -> InlineKeyboardMarkup:
 
 kb_cancel_edit = InlineKeyboardMarkup(
     inline_keyboard=[[InlineKeyboardButton(text='Отменить и выйти', callback_data='cancelFSM')]])
-
-
-kb_cancel_edit2 = InlineKeyboardMarkup(
-    inline_keyboard=[[InlineKeyboardButton(text='К предыдущему пункту', callback_data='prevFSM')], [InlineKeyboardButton(text='Отменить и выйти', callback_data='cancelFSM')]])
-
 
 kb_help_menu = InlineKeyboardMarkup(
     inline_keyboard=[[InlineKeyboardButton(text='🏠Передержка', callback_data='keep'),
@@ -146,13 +142,22 @@ async def pet_was_deleted(pet_type: int, page: int) -> InlineKeyboardMarkup:
 
 async def what_to_edit(pet_type: int, page: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text='Фото', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='img'))
-    builder.button(text='Описание', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='description'))
-    builder.button(text='Возраст', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='age'))
-    builder.button(text='Стерилизация', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='sterilized'))
-    builder.button(text='Место', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='place'))
-    builder.button(text='Куратор', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='curator'))
-    builder.button(text='Нужна ли передержка', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit', additional='needs_temp_keeping'))
+    builder.button(text='Фото', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit',
+                                                                       additional='img'))
+    builder.button(text='Описание', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit',
+                                                                           additional='description'))
+    builder.button(text='Возраст', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit',
+                                                                          additional='age'))
+    builder.button(text='Стерилизация',
+                   callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit',
+                                                          additional='sterilized'))
+    builder.button(text='Место', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit',
+                                                                        additional='place'))
+    builder.button(text='Куратор', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit',
+                                                                          additional='curator'))
+    builder.button(text='Нужна ли передержка',
+                   callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='edit',
+                                                          additional='needs_temp_keeping'))
     builder.button(text='Назад', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='post'))
     builder.adjust(2, 2, 2, 1, 1)
     return builder.as_markup()
@@ -160,7 +165,8 @@ async def what_to_edit(pet_type: int, page: int) -> InlineKeyboardMarkup:
 
 async def edit_ended(pet_type: int, page: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text='Продолжить', callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='post'))
+    builder.button(text='Продолжить',
+                   callback_data=cf.SearchCallbackFactory(pet_type=pet_type, page=page, action='post'))
     return builder.as_markup()
 
 
@@ -169,7 +175,8 @@ async def name_search_results(result_list: list) -> InlineKeyboardMarkup:
     for item in result_list:
         pets_list = await db.pets_list(pet_type=item[3])
         page = pets_list.index(item[1])
-        builder.button(text=item[0].capitalize(), callback_data=cf.SearchCallbackFactory(pet_type=item[3], page=page, action='scrolling'))
+        builder.button(text=item[0].capitalize(),
+                       callback_data=cf.SearchCallbackFactory(pet_type=item[3], page=page, action='scrolling'))
     builder.adjust(2)
     builder.button(text='Скрыть', callback_data='hide')
     return builder.as_markup()
@@ -180,7 +187,8 @@ async def name_search_one_result(result_list: list) -> InlineKeyboardMarkup:
     item = result_list[0]
     pets_list = await db.pets_list(pet_type=item[3])
     page = pets_list.index(item[1])
-    builder.button(text='Перейти', callback_data=cf.SearchCallbackFactory(pet_type=item[3], page=page, action='scrolling'))
+    builder.button(text='Перейти',
+                   callback_data=cf.SearchCallbackFactory(pet_type=item[3], page=page, action='scrolling'))
     builder.button(text='Скрыть', callback_data='hide')
     builder.adjust(2)
     return builder.as_markup()
@@ -203,18 +211,24 @@ kb_temp_keeping = InlineKeyboardMarkup(
                      [InlineKeyboardButton(text='Назад', callback_data='help')]])
 
 kb_auto_help = InlineKeyboardMarkup(
-    inline_keyboard=[[InlineKeyboardButton(text='Оставить заявку', callback_data='in_dev')],
+    inline_keyboard=[[InlineKeyboardButton(text='Оставить заявку', callback_data='autoreg|reg')],
                      [InlineKeyboardButton(text='Назад', callback_data='help')]])
 
+kb_auto_help2 = InlineKeyboardMarkup(
+    inline_keyboard=[[InlineKeyboardButton(text='Отменить заявку', callback_data='autoreg|del')],
+                     [InlineKeyboardButton(text='Назад', callback_data='help')]])
 
 pet_type_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=i) for i in db.pet_type]],
-                resize_keyboard=True, one_time_keyboard=True, input_field_placeholder='Выберите вариант из предложенных')
+                                  resize_keyboard=True, one_time_keyboard=True,
+                                  input_field_placeholder='Выберите вариант из предложенных')
 
 pet_sex_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=i) for i in db.pet_sex]],
-                resize_keyboard=True, one_time_keyboard=True, input_field_placeholder='Выберите вариант из предложенных')
+                                 resize_keyboard=True, one_time_keyboard=True,
+                                 input_field_placeholder='Выберите вариант из предложенных')
 
 pet_bool_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=i) for i in db.bool_answer]],
-                resize_keyboard=True, one_time_keyboard=True, input_field_placeholder='Выберите вариант из предложенных')
+                                  resize_keyboard=True, one_time_keyboard=True,
+                                  input_field_placeholder='Выберите вариант из предложенных')
 
 
 async def pet_place_kb() -> ReplyKeyboardMarkup:
@@ -226,3 +240,10 @@ async def pet_place_kb() -> ReplyKeyboardMarkup:
     builder.adjust(2)
     return builder.as_markup()
 
+
+async def kb_help_ad(user_id: int) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text='Предложить помощь',
+                                     url=f"tg://user?id={user_id}"))  # !!! будет ошибка если у админа настроена приватность
+    builder.row(InlineKeyboardButton(text='Скрыть', callback_data='hide'))
+    return builder.as_markup()

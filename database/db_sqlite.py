@@ -121,3 +121,35 @@ def edit_pet(content_type: str, data: str, row_id: int) -> bool | None:
         cur = con.cursor()
         cur.execute(f'''UPDATE pets SET {content_type} = ? WHERE rowid = '{row_id}' ''', [data])
     return True
+
+
+def user_auto(user_id) -> bool | None:
+    with sq.connect('animals.db') as con:
+        cur = con.cursor()
+        result = cur.execute(f'SELECT auto FROM help_users WHERE account_id = {user_id}').fetchone()
+    if result:
+        return result[0]
+
+
+def change_user_auto_status(user_id: int, status: int) -> None:
+    with sq.connect('animals.db') as con:
+        cur = con.cursor()
+        if user_auto(user_id=user_id) is None:
+            cur.execute(f'INSERT INTO help_users (account_id, auto) VALUES (?, ?)', (user_id, status))
+        else:
+            cur.execute(f'UPDATE help_users SET auto = {status} WHERE account_id = {user_id}')
+        cur.close()
+
+
+def get_users_auto_help() -> list:
+    with sq.connect('animals.db') as con:
+        cur = con.cursor()
+        result = cur.execute(f'SELECT account_id FROM help_users WHERE auto = 1').fetchall()
+        cur.close()
+    return [i[0] for i in result]
+
+
+def add_new_auto_ad(data: dict) -> None:
+    with sq.connect('animals.db') as con:
+        cur = con.cursor()
+        cur.execute(f'INSERT INTO help_ads (img, help_type, message_text, ad_sender) VALUES (?, ?, ?, ?)', (data['img'], 1, data['message_text'], data['ad_sender']))

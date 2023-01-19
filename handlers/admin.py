@@ -218,8 +218,64 @@ async def admin_add_pets_curator(message: types.Message, state: FSMContext):
                 await message.answer('<b>Сведения о кураторе - не более 50 символов.</b>\n<i>Повторите ввод.</i>')
 
 
+class FSMAutoHelp(StatesGroup):
+    photo = State()
+    text = State()
+    deleting = State()
+
+
+async def admin_add_autohelp_ad_photo(message: types.Message, state: FSMContext):
+    try:
+        await message.delete()
+    finally:
+        if await is_admin(update=message):
+            await state.set_state(FSMAutoHelp.photo)
+            msg = await message.answer('<b>Загрузите фотографию для объявления.</b>', reply_markup=kb.kb_cancel_edit)
+            await state.update_data(msg=msg.message_id)
+
+
+async def admin_add_autohelp_ad_text(message: types.Message, state: FSMContext):
+    try:
+        data = await state.get_data()
+        await message.delete()
+        await bot.delete_message(chat_id=message.from_user.id, message_id= data['msg'])
+    finally:
+        if await is_admin(update=message):
+            if message.photo:
+                await state.set_state(FSMAutoHelp.text)
+                await state.update_data(img=message.photo[0].file_id)
+                msg = await message.answer('<b>Введите текст объявления (до 900 символов).</b>\n<i><u>Обязательно укажите:</u>\n- дату и время, когда необходима помощь\n- будет ли сопровождение\n-откуда и куда необходимо доставить\n-нужна ли обратная дорога и необходимо ли ждать\n-имеются ли специальные приспособления для перевозки(например, гамак для собак, переноска для кошек)\n- контакты для связи</i>', reply_markup=kb.kb_cancel_edit)
+            else:
+                msg = await message.answer('<b>Вы отправили не фотографию.</b>\n<i>Чтобы продолжить, загрузите фотографию.</i>', reply_markup=kb.kb_cancel_edit)
+            await state.update_data(msg=msg.message_id)
+
+
+async def admin_add_autohelp_ad_check(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    try:
+        await bot.delete_message(chat_id=message.from_user.id, message_id=data['msg'])
+    finally:
+        if await is_admin(update=message):
+            if message.text and len(message.text) < 901:
+                await state.update_data(message_text=message.html_text, ad_sender=message.from_user.id)
+                await message.answer_photo(photo=data['img'], caption='<b>Ваше объявление сохранено.</b>\n\n' + message.text, reply_markup=await kb.main_buttons(is_admin=True))
+                data = await state.get_data()
+                db.add_new_auto_ad(data= data)
+                for user in db.get_users_auto_help():
+                    try:
+                        await bot.send_photo(chat_id=user, photo=data['img'], caption=data['message_text'], reply_markup=await kb.kb_help_ad(user_id=message.from_user.id))
+                    finally:
+                        await sleep(0.2)
+                await state.clear()
+                await message.answer('<b>Рассылка объявления завершена.</b>', reply_markup=await kb.main_buttons(is_admin=True))
+            else:
+                msg = await message.answer(f"<b>{('Вы отправили не текст', f'Вы отправили текст длиной более 900 символов(а именно: {len(message.text)}).')[bool(message.text)]}. Попробуйте снова.</b>", reply_markup=kb.kb_cancel_edit)
+                await state.update_data(msg=msg.message_id)
+
+
 def register_handlers_admin(dp: Dispatcher):
-    dp.message.register(admin_add_pets_start, Text(text=kb.admin_button_text))
+    dp.message.register(admin_add_pets_start, Text(text=kb.admin_buttons_text[0]))
+    dp.message.register(admin_add_autohelp_ad_photo, Text(text=kb.admin_buttons_text[1]))
     dp.message.register(admin_add_pets_photo, FSMAddPet.photo)
     dp.message.register(admin_add_pets_name, FSMAddPet.name)
     dp.message.register(admin_add_pets_type, FSMAddPet.type)
@@ -231,3 +287,5 @@ def register_handlers_admin(dp: Dispatcher):
     dp.message.register(admin_add_pets_description, FSMAddPet.description)
     dp.message.register(admin_add_pets_curator, FSMAddPet.curator)
     dp.message.register(admin_edit_pet, FSMAddPet.edit)
+    dp.message.register(admin_add_autohelp_ad_text, FSMAutoHelp.photo)
+    dp.message.register(admin_add_autohelp_ad_check, FSMAutoHelp.text)

@@ -48,7 +48,7 @@ async def in_dev(call: types.CallbackQuery):
 
 async def other_text(message: types.Message):  # Удаляет всё что поступает со ввода и не соответствует тексту меню
     await message.delete()
-    if await is_admin_silent(userid=message.from_user.id):
+    if message.text: #await is_admin_silent(userid=message.from_user.id):
         request = message.text.lower().strip()
         if len(request) >= 3:
             names = await pets_names_list()
@@ -58,7 +58,7 @@ async def other_text(message: types.Message):  # Удаляет всё что п
                     result_list.append(pet)
             if result_list:
                 if len(result_list) == 1:
-                    await message.answer_photo(photo=result_list[0][2], caption=f'Найден только один питомец по имени <b>{result_list[0][0].capitalize()}</b>.', reply_markup=await kb.name_search_one_result(result_list=result_list))
+                    await message.answer_photo(photo=result_list[0][2], caption=f'По вашему запросу найден только один питомец по имени <b>{result_list[0][0].capitalize()}</b>.', reply_markup=await kb.name_search_one_result(result_list=result_list))
                 elif len(result_list) < 10:
                     msg = '\n'.join([f'{i + 1}. <i>{x[0].capitalize()}</i>' for i, x in enumerate(result_list)])
                     await message.answer_media_group(media=[types.InputMediaPhoto(media=item[2], caption=item[0].capitalize()) for item in result_list])
@@ -69,8 +69,8 @@ async def other_text(message: types.Message):  # Удаляет всё что п
                 await message.answer('<b>Питомцев с таким именем не найдено.</b>\n<i>Может, получится найти через каталог?</i>', reply_markup=await kb.main_buttons(is_admin=True))
         else:
             await message.answer('<b>Чтобы воспользоваться поиском, введите не менее трех букв.</b>\n <i>Либо же воспользуйтесь каталогом.</i>', reply_markup=await kb.main_buttons(is_admin=True))
-    else:
-        await bot.send_message(message.from_user.id, 'Для работы с ботом воспользуйтесь кнопками.', reply_markup=await kb.main_buttons(is_admin=False))
+    # else:
+    #     await bot.send_message(message.from_user.id, 'Для работы с ботом воспользуйтесь кнопками.', reply_markup=await kb.main_buttons(is_admin=False))
 
 
 def register_handlers(dp: Dispatcher):
